@@ -1,7 +1,0 @@
-global:
-  scrape_interval: 2s # באיזו תדירות פרומתאוס ידגום את היעדים (כל 2 שניות)
-
-scrape_configs:
-  - job_name: 'instrument-simulator'
-    static_configs:
-      - targets: ['simulator:8000'] # השם של הקונטיינר והפורט שלו
