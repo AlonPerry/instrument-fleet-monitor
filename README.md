@@ -1,22 +1,39 @@
-# Instrument Fleet Monitor & Telemetry Simulator
+# Instrument Fleet Monitor
 
-A full-stack DevOps monitoring platform built to simulate real-time microscope vacuum metrics, safety interlocks (vacuum degradation triggering High Voltage/HT shutdown), and telemetry alerts.
+A simulator of an electron microscope vacuum system, monitored with Prometheus and Grafana. It reproduces a real protection mechanism: when the gun vacuum degrades, the high voltage is shut down automatically.
 
-## 🚀 Key Features
-* **Telemetry Data Exporter:** Python service simulating real-time vacuum sensor metrics (Pirani/Penning log scale metrics).
-* **Metrics Ingestion:** Prometheus custom exporter scraping live system state metrics.
-* **Visualization & Dashboards:** Grafana dashboards configured with logarithmic scales and dynamic alert thresholds.
-* **Containerized Deployment:** Orchestrated using Docker & Docker Compose for single-command environment deployment.
+![Grafana dashboard during a vacuum leak](docs/images/dashboard-leak.png)
 
-## 🛠️ Architecture & Tech Stack
-* **Language:** Python 3
-* **Containerization:** Docker, Docker Compose
-* **Observability:** Prometheus, Grafana
-* **Version Control:** Git, GitHub Actions
+## How it works
+- A Python simulator exposes gun vacuum pressure, high voltage and turbo pump speed as Prometheus metrics
+- Normal mode: gun vacuum stays around 3e-9 Pa and the high voltage is 200 kV
+- Leak mode: the pressure is multiplied by 1.25 on every update to simulate a vacuum leak
+- Interlock: when the pressure rises above 1e-8 Pa, the high voltage drops from 200 kV to 0
+- Back in normal mode, the system pumps down again and the high voltage recovers
+- Grafana shows the vacuum on a log scale with the interlock threshold marked
 
-## 🚦 Quick Start
+## Tech stack
+Python 3, Prometheus, Grafana, Docker, Docker Compose
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/AlonPerry/instrument-fleet-monitor.git
-   cd instrument-fleet-monitor
+## Quick start
+```bash
+git clone https://github.com/AlonPerry/instrument-fleet-monitor.git
+cd instrument-fleet-monitor
+docker compose up -d
+```
+- Grafana: http://localhost:3000 (dashboard: Instrument Telemetry)
+- Prometheus: http://localhost:9090
+- Simulator metrics: http://localhost:8000/metrics
+- Toggle leak mode on and off: http://localhost:8000/toggle-leak
+
+Stop the stack with `docker compose down`.
+
+## Repository layout
+- simulator/: Python telemetry simulator
+- monitoring/: Prometheus and Grafana configuration
+- docs/: quick commands and learning log
+- docker-compose.yaml: the full stack
+
+## Status and roadmap
+Working: simulator, Prometheus scraping, Grafana dashboard, vacuum interlock.
+Planned: alert rules, CI pipeline, Kubernetes deployment, and a latching interlock that requires a manual reset.
