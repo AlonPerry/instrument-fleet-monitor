@@ -1,4 +1,4 @@
-# 📝 Interview Cheat Sheet & Quick Commands
+# 📝 Quick Commands & Demo Flow
 
 ## 🚀 Terminal Commands
 * **Start Stack:** `docker compose up -d`
