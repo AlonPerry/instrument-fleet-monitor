@@ -1,0 +1,6 @@
+apiVersion: v2
+name: fleet-monitor
+description: A Helm chart for Fleet Equipment Telemetry and Monitoring
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

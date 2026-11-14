@@ -1,0 +1,26 @@
+replicaCount: 1
+
+simulator:
+  image:
+    repository: fleet-simulator
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 8000
+
+postgres:
+  image:
+    repository: postgres
+    tag: "15-alpine"
+  persistence:
+    size: 1Gi
+
+prometheus:
+  image:
+    repository: prom/prometheus
+    tag: v2.45.0
+
+grafana:
+  image:
+    repository: grafana/grafana
+    tag: latest
