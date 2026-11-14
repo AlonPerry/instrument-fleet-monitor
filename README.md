@@ -1,4 +1,5 @@
 # Fleet Equipment Telemetry & Monitoring System
+<<<<<<< Updated upstream
 
 An end-to-end DevOps observability and simulation platform designed to monitor critical telemetry metrics of electron microscopy fleets (Turbo Pump RPM, High Voltage, and Gun Vacuum Pressure) with automated safety interlock behavior, alerting, and CI/CD pipelines.
 
@@ -20,3 +21,5 @@ An end-to-end DevOps observability and simulation platform designed to monitor c
 ├── simulator/                 # Python Flask telemetry simulator & Dockerfile
 ├── deploy.sh                  # Single-point-of-entry deployment script
 └── INSTRUCTIONS.md            # Operational runbook & fault simulation guide
+=======
+>>>>>>> Stashed changes
