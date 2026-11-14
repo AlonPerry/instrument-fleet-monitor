@@ -29,17 +29,17 @@ chmod +x deploy.sh
 ./deploy.sh
 Accessing Services & Fault Simulation
 After deployment, you can access the observability dashboards and test automated safety interlocks using port-forwarding:
-
+```
 Grafana Dashboard:
 ### 1. Grafana Dashboard
-```bash
+bash
 kubectl port-forward svc/grafana-service 3000:3000 -n monitoring
 (Then open http://localhost:3000 in your browser)
 Prometheus UI:
 kubectl port-forward svc/prometheus-service 9090:9090 -n monitoring
 - **Trigger Simulated Vacuum Leak (Fault Injection):**
   To test the automated high-voltage interlock trip, forward the simulator port and trigger a leak on an active instrument (e.g., `tem-01`):
-  ```bash
+
   kubectl port-forward svc/simulator-service 8000:8000 -n monitoring
 Then in another terminal, use the command for the desired instrument:
 # For TEM instrument
