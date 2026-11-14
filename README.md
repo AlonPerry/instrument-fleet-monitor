@@ -31,7 +31,9 @@ Accessing Services & Fault Simulation
 After deployment, you can access the observability dashboards and test automated safety interlocks using port-forwarding:
 
 Grafana Dashboard:
-kubectl port-forward svc/grafana 3000:3000 -n monitoring
+### 1. Grafana Dashboard
+```bash
+kubectl port-forward svc/grafana-service 3000:3000 -n monitoring
 (Then open http://localhost:3000 in your browser)
 Prometheus UI:
 kubectl port-forward svc/prometheus-service 9090:9090 -n monitoring
