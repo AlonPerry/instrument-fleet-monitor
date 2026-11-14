@@ -33,8 +33,8 @@ After deployment, you can access the observability dashboards and test automated
 Grafana Dashboard:
 ```bash
 kubectl port-forward svc/grafana-service 3000:3000 -n monitoring
-(Then open http://localhost:3000 in your browser)
 ```
+(Then open http://localhost:3000 in your browser)
 
 ### Prometheus UI
 ```bash
