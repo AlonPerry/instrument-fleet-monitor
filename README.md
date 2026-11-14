@@ -22,6 +22,7 @@ An end-to-end DevOps observability and simulation platform designed to monitor c
 ├── simulator/                 # Python Flask telemetry simulator & Dockerfile
 ├── deploy.sh                  # Single-point-of-entry deployment script
 └── INSTRUCTIONS.md            # Operational runbook & fault simulation guide
+
 Quick Start (Single-Command Deployment)
 Ensure Minikube and kubectl are installed, then run the single-command deployment script to spin up the entire stack:
 chmod +x deploy.sh
