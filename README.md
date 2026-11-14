@@ -22,3 +22,28 @@ An end-to-end DevOps observability and simulation platform designed to monitor c
 ├── simulator/                 # Python Flask telemetry simulator & Dockerfile
 ├── deploy.sh                  # Single-point-of-entry deployment script
 └── INSTRUCTIONS.md            # Operational runbook & fault simulation guide
+Quick Start (Single-Command Deployment)
+Ensure Minikube and kubectl are installed, then run the single-command deployment script to spin up the entire stack:
+chmod +x deploy.sh
+./deploy.sh
+Accessing Services & Fault Simulation
+After deployment, you can access the observability dashboards and test automated safety interlocks using port-forwarding:
+
+Grafana Dashboard:
+kubectl port-forward svc/grafana 3000:3000 -n monitoring
+(Then open http://localhost:3000 in your browser)
+Prometheus UI:
+kubectl port-forward svc/prometheus-service 9090:9090 -n monitoring
+- **Trigger Simulated Vacuum Leak (Fault Injection):**
+  To test the automated high-voltage interlock trip, forward the simulator port and trigger a leak on an active instrument (e.g., `tem-01`):
+  ```bash
+  kubectl port-forward svc/simulator-service 8000:8000 -n monitoring
+Then in another terminal, use the command for the desired instrument:
+# For TEM instrument
+curl -X POST http://localhost:8000/toggle-leak/tem-01
+
+# For SEM instrument
+curl -X POST http://localhost:8000/toggle-leak/sem-01
+
+# For FIB instrument
+curl -X POST http://localhost:8000/toggle-leak/fib-01
