@@ -29,7 +29,7 @@ chmod +x deploy.sh
 ./deploy.sh
 Accessing Services & Fault Simulation
 After deployment, you can access the observability dashboards and test automated safety interlocks using port-forwarding:
-```
+
 Grafana Dashboard:
 ### 1. Grafana Dashboard
 bash
