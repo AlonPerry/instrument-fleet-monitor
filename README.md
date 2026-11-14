@@ -34,9 +34,12 @@ Grafana Dashboard:
 ```bash
 kubectl port-forward svc/grafana-service 3000:3000 -n monitoring
 (Then open http://localhost:3000 in your browser)
+```
 
-Prometheus UI:
+### Prometheus UI
+```bash
 kubectl port-forward svc/prometheus-service 9090:9090 -n monitoring
+```
 Trigger Simulated Vacuum Leak (Fault Injection): To test the automated high-voltage interlock trip, forward the simulator port and trigger a leak on an active instrument (e.g., tem-01):
 kubectl port-forward svc/simulator-service 8000:8000 -n monitoring
 
