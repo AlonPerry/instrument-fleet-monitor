@@ -1,39 +1,22 @@
-# Instrument Fleet Monitor
+# Fleet Equipment Telemetry & Monitoring System
 
-A simulator of an electron microscope vacuum system, monitored with Prometheus and Grafana. It reproduces a real protection mechanism: when the gun vacuum degrades, the high voltage is shut down automatically.
+An end-to-end DevOps observability and simulation platform designed to monitor critical telemetry metrics of electron microscopy fleets (Turbo Pump RPM, High Voltage, and Gun Vacuum Pressure) with automated safety interlock behavior, alerting, and CI/CD pipelines.
 
-![Grafana dashboard during a vacuum leak](docs/images/dashboard-leak.png)
+## Architecture & Tech Stack
 
-## How it works
-- A Python simulator exposes gun vacuum pressure, high voltage and turbo pump speed as Prometheus metrics
-- Normal mode: gun vacuum stays around 3e-9 Pa and the high voltage is 200 kV
-- Leak mode: the pressure is multiplied by 1.25 on every update to simulate a vacuum leak
-- Interlock: when the pressure rises above 1e-8 Pa, the high voltage drops from 200 kV to 0
-- Back in normal mode, the system pumps down again and the high voltage recovers
-- Grafana shows the vacuum on a log scale with the interlock threshold marked
+- **Telemetry Simulator (Python / Flask):** Exposes Prometheus metrics (`/metrics`) and provides an interactive fault-injection API (`/toggle-leak/<instrument_id>`) to simulate vacuum leaks and automatic high-voltage interlock trips.
+- **Database (PostgreSQL):** Stores persistent telemetry and state records.
+- **Monitoring & Alerting (Prometheus & Grafana):** Scrapes metrics every 5 seconds, evaluates critical alert rules (`VacuumLeakDetected` when `vacuum_pascal >= 1.0e-4`), and visualizes real-time fleet health via pre-provisioned dashboards.
+- **Orchestration & Packaging (Kubernetes & Helm):** Deployed on Minikube and packaged as a professional Helm chart (`helm/fleet-monitor/`), unified under a single-command deployment script (`deploy.sh`).
+- **CI/CD (GitHub Actions):** Automated validation of Python dependencies and Kubernetes YAML schemas (`kubeconform`) on every push to `main`.
 
-## Tech stack
-Python 3, Prometheus, Grafana, Docker, Docker Compose
+## Project Structure
 
-## Quick start
-```bash
-git clone https://github.com/AlonPerry/instrument-fleet-monitor.git
-cd instrument-fleet-monitor
-docker compose up -d
-```
-- Grafana: http://localhost:3000 (dashboard: Instrument Telemetry)
-- Prometheus: http://localhost:9090
-- Simulator metrics: http://localhost:8000/metrics
-- Toggle leak mode on and off: http://localhost:8000/toggle-leak
-
-Stop the stack with `docker compose down`.
-
-## Repository layout
-- simulator/: Python telemetry simulator
-- monitoring/: Prometheus and Grafana configuration
-- docs/: quick commands and learning log
-- docker-compose.yaml: the full stack
-
-## Status and roadmap
-Working: simulator, Prometheus scraping, Grafana dashboard, vacuum interlock.
-Planned: alert rules, CI pipeline, Kubernetes deployment, and a latching interlock that requires a manual reset.
+```text
+├── .github/workflows/ci.yml   # Automated CI pipeline
+├── helm/fleet-monitor/        # Packaged Helm Chart (Chart.yaml, values.yaml, templates/)
+├── k8s/                       # Kubernetes manifests (Namespaces, Deployments, Services, ConfigMaps, Alerts)
+├── monitoring/                # Grafana dashboard JSON definitions
+├── simulator/                 # Python Flask telemetry simulator & Dockerfile
+├── deploy.sh                  # Single-point-of-entry deployment script
+└── INSTRUCTIONS.md            # Operational runbook & fault simulation guide
