@@ -6,12 +6,3 @@ metadata:
 data:
   POSTGRES_DB: fleet_db
   POSTGRES_USER: fleet_user
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: postgres-secret
-  namespace: fleet-system
-type: Opaque
-stringData:
-  POSTGRES_PASSWORD: fleet_password

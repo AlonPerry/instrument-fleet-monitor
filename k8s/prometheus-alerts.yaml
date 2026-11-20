@@ -9,7 +9,7 @@ data:
     - name: FleetEquipmentAlerts
       rules:
       - alert: VacuumLeakDetected
-        expr: vacuum_pascal >= 1.0e-4
+        expr: instrument_gun_vacuum_pascals >= 1.0e-4
         for: 5s
         labels:
           severity: critical

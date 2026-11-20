@@ -1,20 +1,25 @@
 import os
 import time
 import threading
+import logging
 import psycopg2
 from flask import Flask, Response
 from prometheus_client import Gauge, generate_latest, CONTENT_TYPE_LATEST
 
 app = Flask(__name__)
+logger = logging.getLogger(__name__)
 
-# Database Configuration with robust defaults
+# Database Configuration
 DB_HOST = os.getenv("DB_HOST", "postgres-service")
 DB_USER = os.getenv("DB_USER", "fleet_user")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "fleet_password")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME", "fleet_db")
 
 def get_db_connection():
-    """Establishes connection to PostgreSQL safely without crashing."""
+    """Establishes a PostgreSQL connection using the required credentials."""
+    if not DB_PASSWORD:
+        raise RuntimeError("DB_PASSWORD environment variable must be set")
+
     try:
         conn = psycopg2.connect(
             host=DB_HOST,
@@ -28,28 +33,53 @@ def get_db_connection():
         return None
 
 def init_db():
-    """Initializes database table if available."""
-    conn = get_db_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS fleet_telemetry (
-                    id SERIAL PRIMARY KEY,
-                    instrument_name VARCHAR(50),
-                    instrument_type VARCHAR(20),
-                    vacuum_pascal FLOAT,
-                    turbo_rpm FLOAT,
-                    high_voltage FLOAT,
-                    leak_active BOOLEAN,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    """Initializes the database table, retrying while PostgreSQL starts."""
+    max_attempts = 10
+    retry_delay = 2
+    for attempt in range(1, max_attempts + 1):
+        conn = get_db_connection()
+        if conn:
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute('''
+                        CREATE TABLE IF NOT EXISTS fleet_telemetry (
+                            id SERIAL PRIMARY KEY,
+                            instrument_name VARCHAR(50),
+                            instrument_type VARCHAR(20),
+                            vacuum_pascal FLOAT,
+                            turbo_rpm FLOAT,
+                            high_voltage FLOAT,
+                            leak_active BOOLEAN,
+                            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    ''')
+                conn.commit()
+                return
+            except psycopg2.Error as exc:
+                logger.warning(
+                    "Database initialization attempt %s/%s failed: %s",
+                    attempt,
+                    max_attempts,
+                    exc,
                 )
-            ''')
-            conn.commit()
-            cursor.close()
-            conn.close()
-        except Exception:
-            pass
+            finally:
+                conn.close()
+        else:
+            logger.warning(
+                "Could not connect to PostgreSQL for database initialization "
+                "(attempt %s/%s)",
+                attempt,
+                max_attempts,
+            )
+
+        if attempt < max_attempts:
+            time.sleep(retry_delay)
+
+    logger.error(
+        "Could not initialize the database table after %s attempts; "
+        "continuing without database initialization",
+        max_attempts,
+    )
 
 # Initialize DB on startup safely
 init_db()

@@ -23,6 +23,22 @@ An end-to-end DevOps observability and simulation platform designed to monitor c
 ├── deploy.sh                  # Single-point-of-entry deployment script
 └── INSTRUCTIONS.md            # Operational runbook & fault simulation guide
 ```
+
+## Credentials
+
+For Docker Compose, copy `.env.example` to `.env` and set `DB_PASSWORD` and
+`GRAFANA_ADMIN_PASSWORD` to private values before starting the services. `.env`
+is ignored by Git.
+
+The Kubernetes manifests expect externally created `postgres-secret` (key
+`POSTGRES_PASSWORD`) and `grafana-secret` (key
+`GF_SECURITY_ADMIN_PASSWORD`) Secrets in `fleet-system` and `monitoring`,
+respectively. The Helm chart uses those secret names and keys by default;
+override them with `postgres.existingSecret`, `postgres.passwordKey`,
+`grafana.adminPasswordSecret`, and `grafana.adminPasswordKey`. Create Secrets in
+the target namespace before deploying; don't put password values in manifests
+or Helm values.
+
 Quick Start (Single-Command Deployment)
 Ensure Minikube and kubectl are installed, then run the single-command deployment script to spin up the entire stack:
 chmod +x deploy.sh

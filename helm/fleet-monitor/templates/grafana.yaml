@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources
-  namespace: monitoring
+  namespace: {{ .Release.Namespace }}
 data:
   datasource.yaml: |
     apiVersion: 1
@@ -10,7 +10,7 @@ data:
       - name: Prometheus
         type: prometheus
         access: proxy
-        url: http://prometheus-service.monitoring.svc.cluster.local:9090
+        url: http://prometheus-service:9090
         isDefault: true
         editable: false
 
@@ -19,7 +19,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboards-provider
-  namespace: monitoring
+  namespace: {{ .Release.Namespace }}
 data:
   dashboard.yaml: |
     apiVersion: 1
@@ -38,7 +38,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboards-json
-  namespace: monitoring
+  namespace: {{ .Release.Namespace }}
 data:
   fleet-dashboard.json: |
     {
@@ -371,9 +371,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana-deployment
-  namespace: monitoring
+  namespace: {{ .Release.Namespace }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: grafana
@@ -384,12 +384,15 @@ spec:
     spec:
       containers:
         - name: grafana
-          image: grafana/grafana:10.0.0
+          image: "{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}"
           ports:
             - containerPort: 3000
           env:
             - name: GF_SECURITY_ADMIN_PASSWORD
-              value: "admin"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.grafana.adminPasswordSecret }}
+                  key: {{ .Values.grafana.adminPasswordKey }}
           volumeMounts:
             - name: datasources-volume
               mountPath: /etc/grafana/provisioning/datasources/datasource.yaml
@@ -416,7 +419,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grafana-service
-  namespace: monitoring
+  namespace: {{ .Release.Namespace }}
 spec:
   type: NodePort
   ports:

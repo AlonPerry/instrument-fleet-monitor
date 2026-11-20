@@ -23,6 +23,26 @@ jobs:
           cd simulator
           pip install --no-cache-dir -r requirements.txt
 
+      - name: Check Python Syntax
+        run: python -m py_compile simulator/app.py simulator/tests/test_app.py
+
+      - name: Run Python Unit Tests
+        run: python -m unittest discover -s simulator/tests -v
+
+      - name: Validate Docker Compose
+        run: |
+          DB_PASSWORD="$(openssl rand -hex 32)" \
+          GRAFANA_ADMIN_PASSWORD="$(openssl rand -hex 32)" \
+          docker compose config --quiet
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.4
+
+      - name: Lint Helm Chart
+        run: helm lint helm/fleet-monitor
+
       - name: Validate Kubernetes Manifests
         uses: stefanprodan/kubeconform@v1
         with:

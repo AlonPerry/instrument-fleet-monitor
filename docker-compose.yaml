@@ -10,10 +10,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DB_HOST=postgres_db
-      - DB_USER=fleet_user
-      - DB_PASSWORD=fleet_password
-      - DB_NAME=fleet_db
+      DB_HOST: postgres_db
+      DB_USER: ${DB_USER:-fleet_user}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env or the environment}
+      DB_NAME: ${DB_NAME:-fleet_db}
     depends_on:
       postgres_db:
         condition: service_healthy
@@ -25,9 +25,9 @@ services:
     image: postgres:15-alpine
     container_name: fleet_postgres
     environment:
-      POSTGRES_USER: fleet_user
-      POSTGRES_PASSWORD: fleet_password
-      POSTGRES_DB: fleet_db
+      POSTGRES_USER: ${DB_USER:-fleet_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env or the environment}
+      POSTGRES_DB: ${DB_NAME:-fleet_db}
     ports:
       - "5432:5432"
     volumes:
@@ -52,11 +52,13 @@ services:
   # ----------------------------------------------------
   # Service 4: Grafana (Dashboards & Visualization)
   # ----------------------------------------------------
-afrika  grafana:
+  grafana:
     image: grafana/grafana:10.1.0
     container_name: grafana
     ports:
       - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env or the environment}
     depends_on:
       - prometheus
     volumes:

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres-deployment
-  namespace: fleet-system
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
@@ -15,20 +15,30 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: postgres:15-alpine
+        image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
         ports:
         - containerPort: 5432
         envFrom:
         - configMapRef:
             name: postgres-config
         - secretRef:
-            name: postgres-secret
+            name: {{ .Values.postgres.existingSecret }}
+        env:
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-data
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres-db
-  namespace: fleet-system
+  namespace: {{ .Release.Namespace }}
 spec:
   type: ClusterIP
   ports:
@@ -36,3 +46,15 @@ spec:
     targetPort: 5432
   selector:
     app: postgres
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgres.persistence.size | quote }}

@@ -2,14 +2,14 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-alert-rules
-  namespace: monitoring
+  namespace: {{ .Release.Namespace }}
 data:
   alert.rules: |
     groups:
     - name: FleetEquipmentAlerts
       rules:
       - alert: VacuumLeakDetected
-        expr: vacuum_pascal >= 1.0e-4
+        expr: instrument_gun_vacuum_pascals >= 1.0e-4
         for: 5s
         labels:
           severity: critical
