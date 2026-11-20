@@ -21,9 +21,12 @@ spec:
         envFrom:
         - configMapRef:
             name: postgres-config
-        - secretRef:
-            name: {{ .Values.postgres.existingSecret }}
         env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.postgres.existingSecret }}
+              key: {{ .Values.postgres.passwordKey }}
         - name: PGDATA
           value: /var/lib/postgresql/data/pgdata
         volumeMounts:

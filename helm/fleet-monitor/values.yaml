@@ -20,7 +20,7 @@ postgres:
 prometheus:
   image:
     repository: prom/prometheus
-    tag: v2.45.0
+    tag: v2.47.0
 
 grafana:
   image:

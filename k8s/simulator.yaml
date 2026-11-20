@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: simulator
-        image: fleet-simulator:latest
+        image: fleet-simulator:1.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000

@@ -43,6 +43,18 @@ jobs:
       - name: Lint Helm Chart
         run: helm lint helm/fleet-monitor
 
+      - name: Check Deployment Script Syntax
+        run: bash -n deploy.sh
+
+      - name: Render Helm Chart
+        run: helm template fleet-monitor helm/fleet-monitor --namespace monitoring > helm-rendered.yaml
+
+      - name: Validate Rendered Helm Manifests
+        uses: stefanprodan/kubeconform@v1
+        with:
+          path: "helm-rendered.yaml"
+          strict: false
+
       - name: Validate Kubernetes Manifests
         uses: stefanprodan/kubeconform@v1
         with:
