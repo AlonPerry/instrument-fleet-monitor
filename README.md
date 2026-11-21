@@ -1,70 +1,127 @@
-# Fleet Equipment Telemetry & Monitoring System
+# Instrument Fleet Monitor
 
-An end-to-end DevOps observability and simulation platform designed to monitor critical telemetry metrics of electron microscopy fleets (Turbo Pump RPM, High Voltage, and Gun Vacuum Pressure) with automated safety interlock behavior, alerting, and CI/CD pipelines.
+A telemetry and observability demo for microscope equipment. The simulator
+generates vacuum, turbo-pump, and high-voltage readings, stores telemetry in
+PostgreSQL, and exposes metrics and a leak-toggle endpoint.
 
-![Grafana Dashboard Interlock Status](docs/images/Screenshot%20From%202026-11-14%2017-47-49.png)
+## Architecture
 
-## Architecture & Tech Stack
-
-- **Telemetry Simulator (Python / Flask):** Exposes Prometheus metrics (`/metrics`) and provides an interactive fault-injection API (`/toggle-leak/<instrument_id>`) to simulate vacuum leaks and automatic high-voltage interlock trips.
-- **Database (PostgreSQL):** Stores persistent telemetry and state records.
-- **Monitoring & Alerting (Prometheus & Grafana):** Scrapes metrics every 5 seconds, evaluates critical alert rules (`VacuumLeakDetected` when `vacuum_pascal >= 1.0e-4`), and visualizes real-time fleet health via pre-provisioned dashboards.
-- **Orchestration & Packaging (Kubernetes & Helm):** Deployed on Minikube and packaged as a professional Helm chart (`helm/fleet-monitor/`), unified under a single-command deployment script (`deploy.sh`).
-- **CI/CD (GitHub Actions):** Automated validation of Python dependencies and Kubernetes YAML schemas (`kubeconform`) on every push to `main`.
+- **Simulator:** Flask serves `/metrics` and `/toggle-leak/<instrument>`. Its
+  Prometheus vacuum metric is `instrument_gun_vacuum_pascals`.
+- **PostgreSQL:** Stores telemetry; Kubernetes and Helm deployments use
+  persistent storage.
+- **Prometheus:** Scrapes the simulator and evaluates the vacuum-leak alert.
+- **Grafana:** Reads Prometheus and displays the fleet dashboard.
+- **Deployment:** Docker Compose for local use, Kubernetes on Minikube via
+  `deploy.sh`, or the chart in `helm/fleet-monitor/`.
 
 ## Project Structure
 
 ```text
-├── .github/workflows/ci.yml   # Automated CI pipeline
-├── helm/fleet-monitor/        # Packaged Helm Chart (Chart.yaml, values.yaml, templates/)
-├── k8s/                       # Kubernetes manifests (Namespaces, Deployments, Services, ConfigMaps, Alerts)
-├── monitoring/                # Grafana dashboard JSON definitions
-├── simulator/                 # Python Flask telemetry simulator & Dockerfile
-├── deploy.sh                  # Single-point-of-entry deployment script
-└── INSTRUCTIONS.md            # Operational runbook & fault simulation guide
+├── .env.example
+├── .github/workflows/ci.yml
+├── demo.sh
+├── deploy.sh
+├── docker-compose.yaml
+├── docs/
+│   ├── images/
+│   └── learning-log.md
+├── helm/fleet-monitor/
+│   ├── templates/
+│   └── values.yaml
+├── k8s/
+├── monitoring/
+├── simulator/
+│   └── tests/
+└── README.md
 ```
 
 ## Credentials
 
-For Docker Compose, copy `.env.example` to `.env` and set `DB_PASSWORD` and
-`GRAFANA_ADMIN_PASSWORD` to private values before starting the services. `.env`
-is ignored by Git.
+Copy `.env.example` to `.env` and set private local values for
+`DB_PASSWORD` and `GRAFANA_ADMIN_PASSWORD`. `.env` is ignored by Git; do not
+commit real credentials. `deploy.sh` reads these values and creates the
+Kubernetes Secrets before applying manifests. Direct Helm installs require the
+configured Secrets to exist in the release namespace.
 
-The Kubernetes manifests expect externally created `postgres-secret` (key
-`POSTGRES_PASSWORD`) and `grafana-secret` (key
-`GF_SECURITY_ADMIN_PASSWORD`) Secrets in `fleet-system` and `monitoring`,
-respectively. The Helm chart uses those secret names and keys by default;
-override them with `postgres.existingSecret`, `postgres.passwordKey`,
-`grafana.adminPasswordSecret`, and `grafana.adminPasswordKey`. Create Secrets in
-the target namespace before deploying; don't put password values in manifests
-or Helm values.
+## Local Setup with Docker Compose
 
-Quick Start (Single-Command Deployment)
-Ensure Minikube and kubectl are installed, then run the single-command deployment script to spin up the entire stack:
-chmod +x deploy.sh
+If `.env` does not already exist, copy the example and restrict its permissions.
+Set both required values before starting the stack:
+
+```bash
+[ -f .env ] || cp .env.example .env
+chmod 600 .env
+# Set DB_PASSWORD and GRAFANA_ADMIN_PASSWORD in .env.
+docker compose up --build -d
+```
+
+Stop the local stack with `docker compose down`.
+
+## Minikube Quick Start
+
+Ensure Minikube, `kubectl`, and Docker are installed. Create and configure `.env`
+if needed, then deploy:
+
+```bash
+[ -f .env ] || cp .env.example .env
+chmod 600 .env
+# Set DB_PASSWORD and GRAFANA_ADMIN_PASSWORD in .env.
 ./deploy.sh
-Accessing Services & Fault Simulation
-After deployment, you can access the observability dashboards and test automated safety interlocks using port-forwarding:
-
-Grafana Dashboard:
-```bash
-kubectl port-forward svc/grafana-service 3000:3000 -n monitoring
 ```
-(Then open http://localhost:3000 in your browser)
 
-### Prometheus UI
+`deploy.sh` creates the namespaces and Secrets, applies the Kubernetes
+manifests, and waits for the Deployments to become ready.
+
+## Accessing Services
+
+The helper starts port-forwards for Grafana and the simulator, prints their
+URLs and PIDs, and provides `status` and `down` commands:
+
 ```bash
-kubectl port-forward svc/prometheus-service 9090:9090 -n monitoring
+./demo.sh up
+./demo.sh status
+./demo.sh down
 ```
-Trigger Simulated Vacuum Leak (Fault Injection): To test the automated high-voltage interlock trip, forward the simulator port and trigger a leak on an active instrument (e.g., tem-01):
-kubectl port-forward svc/simulator-service 8000:8000 -n monitoring
 
-Then in another terminal, use the command for the desired instrument:
-# For TEM instrument
-curl -X POST http://localhost:8000/toggle-leak/tem-01
+Open Grafana at `http://localhost:3000`; simulator metrics are at
+`http://localhost:8000/metrics`.
 
-# For SEM instrument
-curl -X POST http://localhost:8000/toggle-leak/sem-01
+For manual port-forwards, run each command in its own terminal:
 
-# For FIB instrument
-curl -X POST http://localhost:8000/toggle-leak/fib-01
+```bash
+kubectl port-forward -n monitoring svc/grafana-service 3000:3000
+kubectl port-forward -n monitoring svc/prometheus-service 9090:9090
+kubectl port-forward -n fleet-system svc/fleet-simulator-service 8000:8000
+```
+
+## Trigger a Simulated Vacuum Leak
+
+With the simulator port-forward active, toggle a leak on `tem-01`:
+
+```bash
+curl -s http://localhost:8000/toggle-leak/tem-01
+```
+
+The vacuum metric rises, Prometheus evaluates `VacuumLeakDetected`, and Grafana
+shows the changing telemetry. Repeat the request to return the instrument to
+normal.
+
+## CI
+
+`.github/workflows/ci.yml` checks Python syntax and unit tests, Docker Compose
+configuration, Helm lint and rendered manifests, raw Kubernetes manifests with
+`kubeconform`, and `deploy.sh` syntax with `bash -n`.
+
+## 15-Minute Interview Demo
+
+1. **Minutes 0–2:** Explain the simulator → PostgreSQL and Prometheus → Grafana
+   flows.
+2. **Minutes 2–5:** Run `./deploy.sh` and `./demo.sh status`.
+3. **Minutes 5–8:** Run `./demo.sh up`; show the Grafana dashboard and simulator
+   metrics.
+4. **Minutes 8–11:** Run the leak toggle command and explain the metric and
+   Prometheus alert.
+5. **Minutes 11–13:** Highlight database persistence, startup retries, and
+   externalized credentials.
+6. **Minutes 13–15:** Review CI coverage and run `./demo.sh down`.
