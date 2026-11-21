@@ -15,6 +15,8 @@ PostgreSQL, and exposes metrics and a leak-toggle endpoint.
 - **Deployment:** Docker Compose for local use, Kubernetes on Minikube via
   `deploy.sh`, or the chart in `helm/fleet-monitor/`.
 
+![Grafana dashboard](<./docs/images/Screenshot From 2026-11-14 17-47-49.png>)
+
 ## Project Structure
 
 ```text
@@ -112,16 +114,3 @@ normal.
 `.github/workflows/ci.yml` checks Python syntax and unit tests, Docker Compose
 configuration, Helm lint and rendered manifests, raw Kubernetes manifests with
 `kubeconform`, and `deploy.sh` syntax with `bash -n`.
-
-## 15-Minute Interview Demo
-
-1. **Minutes 0–2:** Explain the simulator → PostgreSQL and Prometheus → Grafana
-   flows.
-2. **Minutes 2–5:** Run `./deploy.sh` and `./demo.sh status`.
-3. **Minutes 5–8:** Run `./demo.sh up`; show the Grafana dashboard and simulator
-   metrics.
-4. **Minutes 8–11:** Run the leak toggle command and explain the metric and
-   Prometheus alert.
-5. **Minutes 11–13:** Highlight database persistence, startup retries, and
-   externalized credentials.
-6. **Minutes 13–15:** Review CI coverage and run `./demo.sh down`.
